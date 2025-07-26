@@ -6,8 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Optional;
-
 @Entity
 @Table(name = "rooms")
 @Data
@@ -15,17 +13,17 @@ import java.util.Optional;
 @AllArgsConstructor
 public class RoomEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Enumerated(EnumType.STRING)
-    private RoomType roomType;
+  @Enumerated(EnumType.STRING)
+  private RoomType roomType;
 
-    private int capacity;
+  private int capacity;
 
-    private String name;
+  private String name;
 
-    @Column(nullable = true)
-    private String description;
+  @Column(nullable = true)
+  private String description;
 }
