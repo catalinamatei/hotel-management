@@ -26,6 +26,7 @@ public class RoomMapper {
     entity.setRoomType(room.getRoomType());
     entity.setCapacity(room.getCapacity());
     entity.setName(room.getName());
+    entity.setDescription(room.getDescription());
     return entity;
   }
 }

@@ -36,6 +36,7 @@ public class RoomService {
               entity.setName(updatedRoom.getName());
               entity.setCapacity(updatedRoom.getCapacity());
               entity.setRoomType(updatedRoom.getRoomType());
+              entity.setDescription(updatedRoom.getDescription());
               return RoomMapper.toDto(roomRepository.save(entity));
             });
   }

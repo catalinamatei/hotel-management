@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -50,6 +51,17 @@ public class GlobalExceptionHandler {
     Map<String, String> error = new HashMap<>();
     error.put("error", "Conflict");
     error.put("message", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+    log.warn("Data integrity violation: {}", ex.getMessage(), ex);
+
+    Map<String, String> error = new HashMap<>();
+    error.put("error", "Conflict");
+    error.put("message", "Operation violates database constraints. Possible cause: resource is still in use.");
+
     return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
   }
 
