@@ -1,4 +1,4 @@
-package com.hotel_management.booking_api.dto;
+package com.hotel_management.booking_api.enums;
 
 public enum RoomType {
     SINGLE("Single room with one bed"),

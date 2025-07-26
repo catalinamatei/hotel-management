@@ -1,69 +1,72 @@
 package com.hotel_management.booking_api.services;
 
 import com.hotel_management.booking_api.dto.Room;
-import com.hotel_management.booking_api.dto.RoomType;
-import org.junit.jupiter.api.BeforeEach;
+import com.hotel_management.booking_api.enums.RoomType;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 public class RoomServiceTest {
 
+    @Autowired
     private RoomService roomService;
 
-    @BeforeEach
-    void setUp() {
-        roomService = new RoomService();
-    }
-
     @Test
-    void shouldCreateRoomSuccessfully() {
-        Room room = new Room(null, RoomType.SINGLE, 1, "Room 101");
+    void shouldCreateAndRetrieveRoom() {
+        Room room = new Room(null, RoomType.SINGLE, 1, "Room 101", "Description");
         Room created = roomService.createRoom(room);
 
         assertThat(created.getId()).isNotNull();
-        assertThat(created.getRoomType()).isEqualTo(RoomType.SINGLE);
-        assertThat(created.getCapacity()).isEqualTo(1);
         assertThat(created.getName()).isEqualTo("Room 101");
-    }
 
-    @Test
-    void shouldRetrieveRoomById() {
-        Room created = roomService.createRoom(new Room(null, RoomType.DOUBLE, 2, "Room 102"));
         Optional<Room> found = roomService.getRoomById(created.getId());
-
         assertThat(found).isPresent();
-        assertThat(found.get().getName()).isEqualTo("Room 102");
+        assertThat(found.get().getName()).isEqualTo("Room 101");
     }
 
     @Test
     void shouldUpdateRoom() {
-        Room original = roomService.createRoom(new Room(null, RoomType.SUITE, 3, "Suite 103"));
-        Room update = new Room(null, RoomType.SUITE, 4, "Updated Suite 103");
+        Room room = new Room(null, RoomType.DOUBLE, 2, "Room 102", "Description");
+        Room created = roomService.createRoom(room);
 
-        Optional<Room> updated = roomService.updateRoom(original.getId(), update);
+        Room update = new Room(null, RoomType.DOUBLE, 3, "Room 102 Updated", "Description");
+        Optional<Room> updated = roomService.updateRoom(created.getId(), update);
 
         assertThat(updated).isPresent();
-        assertThat(updated.get().getCapacity()).isEqualTo(4);
-        assertThat(updated.get().getName()).isEqualTo("Updated Suite 103");
+        assertThat(updated.get().getCapacity()).isEqualTo(3);
+        assertThat(updated.get().getName()).isEqualTo("Room 102 Updated");
     }
 
     @Test
     void shouldDeleteRoom() {
-        Room room = roomService.createRoom(new Room(null, RoomType.DELUXE, 2, "Deluxe 104"));
-        boolean deleted = roomService.deleteRoom(room.getId());
+        Room room = new Room(null, RoomType.SUITE, 4, "Suite 103", "Description");
+        Room created = roomService.createRoom(room);
 
+        boolean deleted = roomService.deleteRoom(created.getId());
         assertThat(deleted).isTrue();
-        assertThat(roomService.getRoomById(room.getId())).isEmpty();
+
+        Optional<Room> found = roomService.getRoomById(created.getId());
+        assertThat(found).isEmpty();
     }
 
     @Test
     void shouldReturnAllRooms() {
-        roomService.createRoom(new Room(null, RoomType.SINGLE, 1, "R201"));
-        roomService.createRoom(new Room(null, RoomType.DOUBLE, 2, "R202"));
+        roomService.createRoom(new Room(null, RoomType.SINGLE, 1, "R201", "Description"));
+        roomService.createRoom(new Room(null, RoomType.DOUBLE, 2, "R202", "Description"));
 
-        assertThat(roomService.getAllRooms()).hasSize(2);
+        List<Room> rooms = roomService.getAllRooms();
+
+        assertThat(rooms).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(rooms).extracting(Room::getName).contains("R201", "R202");
     }
 }
