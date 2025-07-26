@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  # frontend:
+  #   container_name: frontend
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "6002:80"
+  #   volumes:
+  #     - ./frontend/src:/app/src:ro
+
+  # backend:
+  #   container_name: backend
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   env_file: ./environments/backend.env
+  #   ports:
+  #     - "6001:9000"
+
+  # db:
+  #   container_name: db
+  #   image: postgres
+  #   env_file: ./environments/db.env
+  #   ports:
+  #     - "6000:6000"
+  #   volumes:
+  #     - ./conta-db:/var/lib/postgresql/data
+
+  booking-db:
+      container_name: booking-db
+      image: postgres
+      env_file: ./environments/booking-db.env
+      ports:
+        - "7000:6000"
+      volumes:
+        - ./booking-db:/var/lib/postgresql/data
