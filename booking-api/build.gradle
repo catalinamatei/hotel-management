@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.5.4'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'com.diffplug.spotless' version '6.21.0'
+	id 'jacoco'
 }
 
 spotless {
@@ -64,5 +65,14 @@ tasks.named('test') {
 		events "passed", "skipped", "failed"
 		showStandardStreams = false
 		exceptionFormat = "full"
+	}
+	finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
 	}
 }
