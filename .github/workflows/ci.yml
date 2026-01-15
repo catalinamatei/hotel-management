@@ -28,7 +28,7 @@ jobs:
 
       - name: Run tests
         working-directory: ./booking-api
-        run: ./gradlew test
+        run: ./test.sh
 
       - name: Upload test reports
         if: always()

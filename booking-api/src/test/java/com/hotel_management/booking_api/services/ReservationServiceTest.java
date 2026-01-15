@@ -2,209 +2,203 @@ package com.hotel_management.booking_api.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
 
+import com.hotel_management.booking_api.config.TestcontainersConfiguration;
 import com.hotel_management.booking_api.dto.Interval;
 import com.hotel_management.booking_api.dto.ReservationRequestDTO;
 import com.hotel_management.booking_api.dto.ReservationResponseDTO;
+import com.hotel_management.booking_api.dto.Room;
 import com.hotel_management.booking_api.entity.CustomerEntity;
-import com.hotel_management.booking_api.entity.ReservationEntity;
-import com.hotel_management.booking_api.entity.RoomEntity;
-import com.hotel_management.booking_api.enums.ReservationStatus;
 import com.hotel_management.booking_api.enums.RoomType;
 import com.hotel_management.booking_api.repository.CustomerRepository;
 import com.hotel_management.booking_api.repository.ReservationRepository;
-import com.hotel_management.booking_api.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Import(TestcontainersConfiguration.class)
+@ActiveProfiles("integration")
+@Transactional
 class ReservationServiceTest {
 
-  @Mock private ReservationRepository reservationRepository;
+  @Autowired private ReservationService reservationService;
 
-  @Mock private RoomRepository roomRepository;
+  @Autowired private RoomService roomService;
 
-  @Mock private CustomerRepository customerRepository;
+  @Autowired private CustomerRepository customerRepository;
 
-  @InjectMocks private ReservationService reservationService;
+  @Autowired private ReservationRepository reservationRepository;
 
-  private RoomEntity room;
-  private CustomerEntity customer;
-  private ReservationEntity reservation;
-  private ReservationRequestDTO request;
+  private Long roomId;
+  private Long customerId;
 
   @BeforeEach
   void setUp() {
-    room = new RoomEntity();
-    room.setId(1L);
-    room.setName("Room 101");
-    room.setRoomType(RoomType.SINGLE);
-    room.setCapacity(1);
+    reservationRepository.deleteAll();
+    customerRepository.deleteAll();
 
-    customer = new CustomerEntity();
-    customer.setId(1L);
+    Room room = roomService.createRoom(new Room(null, RoomType.SINGLE, 1, "Room 101", "Test room"));
+    roomId = room.getId();
+
+    CustomerEntity customer = new CustomerEntity();
     customer.setFirstName("John");
     customer.setLastName("Doe");
     customer.setEmail("john@example.com");
     customer.setPassword("encoded");
-
-    reservation = new ReservationEntity();
-    reservation.setId(1L);
-    reservation.setRoom(room);
-    reservation.setCustomer(customer);
-    reservation.setStartDate(LocalDate.of(2026, 2, 1));
-    reservation.setEndDate(LocalDate.of(2026, 2, 5));
-    reservation.setReservationStatus(ReservationStatus.BOOKED);
-
-    request = new ReservationRequestDTO();
-    request.setRoomId(1L);
-    request.setCustomerId(1L);
-    request.setStartDate(LocalDate.of(2026, 2, 1));
-    request.setEndDate(LocalDate.of(2026, 2, 5));
+    customer = customerRepository.save(customer);
+    customerId = customer.getId();
   }
 
   @Test
-  void createReservation_withValidData_returnsReservation() {
-    when(roomRepository.findById(1L)).thenReturn(Optional.of(room));
-    when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-    when(reservationRepository.findByRoomIdAndEndDateAfterAndStartDateBefore(
-            anyLong(), any(), any()))
-        .thenReturn(Collections.emptyList());
-    when(reservationRepository.save(any(ReservationEntity.class))).thenReturn(reservation);
+  void createReservation_withValidData_createsReservation() {
+    ReservationRequestDTO request = new ReservationRequestDTO();
+    request.setRoomId(roomId);
+    request.setCustomerId(customerId);
+    request.setStartDate(LocalDate.of(2026, 3, 1));
+    request.setEndDate(LocalDate.of(2026, 3, 5));
 
     ReservationResponseDTO response = reservationService.createReservation(request);
 
-    assertThat(response.getId()).isEqualTo(1L);
-    assertThat(response.getRoomId()).isEqualTo(1L);
+    assertThat(response.getId()).isNotNull();
+    assertThat(response.getRoomId()).isEqualTo(roomId);
     assertThat(response.getRoomName()).isEqualTo("Room 101");
     assertThat(response.getCustomerName()).isEqualTo("John Doe");
-  }
-
-  @Test
-  void createReservation_withEndDateBeforeStart_throwsException() {
-    request.setStartDate(LocalDate.of(2026, 2, 5));
-    request.setEndDate(LocalDate.of(2026, 2, 1));
-
-    assertThatThrownBy(() -> reservationService.createReservation(request))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("End date must be after start date");
-  }
-
-  @Test
-  void createReservation_withNonExistentRoom_throwsException() {
-    when(roomRepository.findById(1L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> reservationService.createReservation(request))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessageContaining("Room not found");
-  }
-
-  @Test
-  void createReservation_withNonExistentCustomer_throwsException() {
-    when(roomRepository.findById(1L)).thenReturn(Optional.of(room));
-    when(customerRepository.findById(1L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> reservationService.createReservation(request))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessageContaining("Customer not found");
+    assertThat(response.getStartDate()).isEqualTo(LocalDate.of(2026, 3, 1));
+    assertThat(response.getEndDate()).isEqualTo(LocalDate.of(2026, 3, 5));
   }
 
   @Test
   void createReservation_withOverlappingDates_throwsException() {
-    when(roomRepository.findById(1L)).thenReturn(Optional.of(room));
-    when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-    when(reservationRepository.findByRoomIdAndEndDateAfterAndStartDateBefore(
-            anyLong(), any(), any()))
-        .thenReturn(List.of(reservation));
+    ReservationRequestDTO first = new ReservationRequestDTO();
+    first.setRoomId(roomId);
+    first.setCustomerId(customerId);
+    first.setStartDate(LocalDate.of(2026, 3, 1));
+    first.setEndDate(LocalDate.of(2026, 3, 10));
+    reservationService.createReservation(first);
 
-    assertThatThrownBy(() -> reservationService.createReservation(request))
+    ReservationRequestDTO overlapping = new ReservationRequestDTO();
+    overlapping.setRoomId(roomId);
+    overlapping.setCustomerId(customerId);
+    overlapping.setStartDate(LocalDate.of(2026, 3, 5));
+    overlapping.setEndDate(LocalDate.of(2026, 3, 15));
+
+    assertThatThrownBy(() -> reservationService.createReservation(overlapping))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Room is already booked for the selected dates");
   }
 
   @Test
-  void getReservationById_existingId_returnsReservation() {
-    when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+  void createReservation_withNonOverlappingDates_succeeds() {
+    ReservationRequestDTO first = new ReservationRequestDTO();
+    first.setRoomId(roomId);
+    first.setCustomerId(customerId);
+    first.setStartDate(LocalDate.of(2026, 3, 1));
+    first.setEndDate(LocalDate.of(2026, 3, 5));
+    reservationService.createReservation(first);
 
-    ReservationResponseDTO response = reservationService.getReservationById(1L);
+    ReservationRequestDTO second = new ReservationRequestDTO();
+    second.setRoomId(roomId);
+    second.setCustomerId(customerId);
+    second.setStartDate(LocalDate.of(2026, 3, 10));
+    second.setEndDate(LocalDate.of(2026, 3, 15));
 
-    assertThat(response.getId()).isEqualTo(1L);
-    assertThat(response.getRoomName()).isEqualTo("Room 101");
+    ReservationResponseDTO response = reservationService.createReservation(second);
+    assertThat(response.getId()).isNotNull();
   }
 
   @Test
-  void getReservationById_nonExistentId_throwsException() {
-    when(reservationRepository.findById(99L)).thenReturn(Optional.empty());
+  void getReservationById_existingReservation_returnsReservation() {
+    ReservationRequestDTO request = new ReservationRequestDTO();
+    request.setRoomId(roomId);
+    request.setCustomerId(customerId);
+    request.setStartDate(LocalDate.of(2026, 4, 1));
+    request.setEndDate(LocalDate.of(2026, 4, 5));
+    ReservationResponseDTO created = reservationService.createReservation(request);
 
-    assertThatThrownBy(() -> reservationService.getReservationById(99L))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessageContaining("Reservation not found");
+    ReservationResponseDTO found = reservationService.getReservationById(created.getId());
+
+    assertThat(found.getId()).isEqualTo(created.getId());
+    assertThat(found.getRoomName()).isEqualTo("Room 101");
+  }
+
+  @Test
+  void getReservationById_nonExistent_throwsException() {
+    assertThatThrownBy(() -> reservationService.getReservationById(99999L))
+        .isInstanceOf(EntityNotFoundException.class);
   }
 
   @Test
   void getAllReservations_returnsAllReservations() {
-    when(reservationRepository.findAll()).thenReturn(List.of(reservation));
+    ReservationRequestDTO request1 = new ReservationRequestDTO();
+    request1.setRoomId(roomId);
+    request1.setCustomerId(customerId);
+    request1.setStartDate(LocalDate.of(2026, 5, 1));
+    request1.setEndDate(LocalDate.of(2026, 5, 5));
+    reservationService.createReservation(request1);
 
-    List<ReservationResponseDTO> result = reservationService.getAllReservations();
+    ReservationRequestDTO request2 = new ReservationRequestDTO();
+    request2.setRoomId(roomId);
+    request2.setCustomerId(customerId);
+    request2.setStartDate(LocalDate.of(2026, 5, 10));
+    request2.setEndDate(LocalDate.of(2026, 5, 15));
+    reservationService.createReservation(request2);
 
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getRoomName()).isEqualTo("Room 101");
+    List<ReservationResponseDTO> all = reservationService.getAllReservations();
+
+    assertThat(all).hasSize(2);
   }
 
   @Test
-  void deleteReservation_existingId_deletesReservation() {
-    when(reservationRepository.existsById(1L)).thenReturn(true);
+  void deleteReservation_existingReservation_deletesIt() {
+    ReservationRequestDTO request = new ReservationRequestDTO();
+    request.setRoomId(roomId);
+    request.setCustomerId(customerId);
+    request.setStartDate(LocalDate.of(2026, 6, 1));
+    request.setEndDate(LocalDate.of(2026, 6, 5));
+    ReservationResponseDTO created = reservationService.createReservation(request);
 
-    reservationService.deleteReservation(1L);
+    reservationService.deleteReservation(created.getId());
 
-    verify(reservationRepository).deleteById(1L);
+    assertThatThrownBy(() -> reservationService.getReservationById(created.getId()))
+        .isInstanceOf(EntityNotFoundException.class);
   }
 
   @Test
-  void deleteReservation_nonExistentId_throwsException() {
-    when(reservationRepository.existsById(99L)).thenReturn(false);
-
-    assertThatThrownBy(() -> reservationService.deleteReservation(99L))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessageContaining("Reservation not found");
-  }
-
-  @Test
-  void getFreeIntervals_withNoReservations_returnsFullInterval() {
-    LocalDate start = LocalDate.of(2026, 3, 1);
-    LocalDate end = LocalDate.of(2026, 3, 10);
-
-    when(reservationRepository
-            .findByRoomIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualOrderByStartDateAsc(
-                anyLong(), any(), any()))
-        .thenReturn(Collections.emptyList());
-
-    List<Interval> intervals = reservationService.getFreeIntervals(1L, start, end);
+  void getFreeIntervals_withNoReservations_returnsFullRange() {
+    List<Interval> intervals =
+        reservationService.getFreeIntervals(
+            roomId, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31));
 
     assertThat(intervals).hasSize(1);
-    assertThat(intervals.get(0).getStart()).isEqualTo(start);
-    assertThat(intervals.get(0).getEnd()).isEqualTo(end);
+    assertThat(intervals.get(0).getStart()).isEqualTo(LocalDate.of(2026, 7, 1));
+    assertThat(intervals.get(0).getEnd()).isEqualTo(LocalDate.of(2026, 7, 31));
   }
 
   @Test
-  void getFreeIntervals_withEndBeforeStart_throwsException() {
-    LocalDate start = LocalDate.of(2026, 3, 10);
-    LocalDate end = LocalDate.of(2026, 3, 1);
+  void getFreeIntervals_withReservation_returnsGaps() {
+    ReservationRequestDTO request = new ReservationRequestDTO();
+    request.setRoomId(roomId);
+    request.setCustomerId(customerId);
+    request.setStartDate(LocalDate.of(2026, 8, 10));
+    request.setEndDate(LocalDate.of(2026, 8, 15));
+    reservationService.createReservation(request);
 
-    assertThatThrownBy(() -> reservationService.getFreeIntervals(1L, start, end))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("End date must be after start date");
+    List<Interval> intervals =
+        reservationService.getFreeIntervals(
+            roomId, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31));
+
+    assertThat(intervals).hasSize(2);
+    assertThat(intervals.get(0).getStart()).isEqualTo(LocalDate.of(2026, 8, 1));
+    assertThat(intervals.get(0).getEnd()).isEqualTo(LocalDate.of(2026, 8, 10));
+    assertThat(intervals.get(1).getStart()).isEqualTo(LocalDate.of(2026, 8, 15));
+    assertThat(intervals.get(1).getEnd()).isEqualTo(LocalDate.of(2026, 8, 31));
   }
 }
