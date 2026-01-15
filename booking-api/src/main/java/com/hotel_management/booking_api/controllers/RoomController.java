@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/room")
+@RequestMapping("api/room")
 @RequiredArgsConstructor
 public class RoomController {
   @Autowired private final RoomService roomService;

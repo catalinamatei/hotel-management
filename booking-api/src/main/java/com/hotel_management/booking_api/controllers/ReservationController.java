@@ -4,6 +4,7 @@ import com.hotel_management.booking_api.dto.Interval;
 import com.hotel_management.booking_api.dto.ReservationRequestDTO;
 import com.hotel_management.booking_api.dto.ReservationResponseDTO;
 import com.hotel_management.booking_api.services.ReservationService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -13,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/reservations")
+@RequestMapping("api/reservations")
 @RequiredArgsConstructor
 public class ReservationController {
 
@@ -26,6 +27,7 @@ public class ReservationController {
     return ResponseEntity.ok(response);
   }
 
+  @Operation(summary = "Id camerei", description = "Returnează camera cu id-ul specificat")
   @GetMapping("/{id}")
   public ResponseEntity<ReservationResponseDTO> getReservationById(@PathVariable Long id) {
     ReservationResponseDTO response = reservationService.getReservationById(id);

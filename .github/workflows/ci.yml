@@ -22,6 +22,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./booking-api/gradlew
 
+      - name: Check code formatting
+        working-directory: ./booking-api
+        run: ./gradlew spotlessCheck
+
       - name: Run tests
         working-directory: ./booking-api
         run: ./gradlew test

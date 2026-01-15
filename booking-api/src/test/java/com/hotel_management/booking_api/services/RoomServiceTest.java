@@ -2,6 +2,7 @@ package com.hotel_management.booking_api.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.hotel_management.booking_api.config.TestcontainersConfiguration;
 import com.hotel_management.booking_api.dto.Room;
 import com.hotel_management.booking_api.enums.RoomType;
 import java.util.List;
@@ -9,11 +10,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
-@ActiveProfiles("test")
+@Import(TestcontainersConfiguration.class)
+@ActiveProfiles("integration")
 @Transactional
 public class RoomServiceTest {
 

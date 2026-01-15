@@ -1,5 +1,6 @@
 package com.hotel_management.booking_api.exceptions;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,9 +9,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+@Hidden
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -54,13 +57,25 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
   }
 
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
+    log.warn("Authentication failed: {}", ex.getMessage());
+    Map<String, String> error = new HashMap<>();
+    error.put("error", "Unauthorized");
+    error.put("message", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+  }
+
   @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+  public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(
+      DataIntegrityViolationException ex) {
     log.warn("Data integrity violation: {}", ex.getMessage(), ex);
 
     Map<String, String> error = new HashMap<>();
     error.put("error", "Conflict");
-    error.put("message", "Operation violates database constraints. Possible cause: resource is still in use.");
+    error.put(
+        "message",
+        "Operation violates database constraints. Possible cause: resource is still in use.");
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
   }
