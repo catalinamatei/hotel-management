@@ -13,5 +13,4 @@ public class HealthController {
   public Map<String, String> health() {
     return Map.of("status", "TODO-CHANGE-ME-CATALINA-TO-OK");
   }
-
 }

@@ -64,9 +64,7 @@ class ApiSanitizationTest {
       Set<String> patterns = mappingInfo.getPatternValues();
       Set<String> methods =
           new HashSet<>(
-              mappingInfo.getMethodsCondition().getMethods().stream()
-                  .map(Enum::name)
-                  .toList());
+              mappingInfo.getMethodsCondition().getMethods().stream().map(Enum::name).toList());
 
       if (methods.isEmpty()) {
         methods.add("GET");
