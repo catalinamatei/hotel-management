@@ -7,6 +7,7 @@ import com.hotel_management.booking_api.entity.CustomerEntity;
 import com.hotel_management.booking_api.entity.ReservationEntity;
 import com.hotel_management.booking_api.entity.RoomEntity;
 import com.hotel_management.booking_api.enums.ReservationStatus;
+import com.hotel_management.booking_api.mapper.ReservationMapper;
 import com.hotel_management.booking_api.repository.CustomerRepository;
 import com.hotel_management.booking_api.repository.ReservationRepository;
 import com.hotel_management.booking_api.repository.RoomRepository;
@@ -64,7 +65,7 @@ public class ReservationService {
     reservation.setReservationStatus(ReservationStatus.BOOKED);
 
     ReservationEntity saved = reservationRepository.save(reservation);
-    return mapToResponseDTO(saved);
+    return ReservationMapper.toResponseDTO(saved);
   }
 
   public ReservationResponseDTO getReservationById(Long id) {
@@ -72,12 +73,12 @@ public class ReservationService {
         reservationRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Reservation not found with ID: " + id));
-    return mapToResponseDTO(reservation);
+    return ReservationMapper.toResponseDTO(reservation);
   }
 
   public List<ReservationResponseDTO> getAllReservations() {
     return reservationRepository.findAll().stream()
-        .map(this::mapToResponseDTO)
+        .map(ReservationMapper::toResponseDTO)
         .collect(Collectors.toList());
   }
 
@@ -117,18 +118,5 @@ public class ReservationService {
     }
 
     return freeIntervals;
-  }
-
-  private ReservationResponseDTO mapToResponseDTO(ReservationEntity entity) {
-    ReservationResponseDTO dto = new ReservationResponseDTO();
-    dto.setId(entity.getId());
-    dto.setRoomId(entity.getRoom().getId());
-    dto.setRoomName(entity.getRoom().getName());
-    dto.setCustomerId(entity.getCustomer().getId());
-    dto.setCustomerName(
-        entity.getCustomer().getFirstName() + " " + entity.getCustomer().getLastName());
-    dto.setStartDate(entity.getStartDate());
-    dto.setEndDate(entity.getEndDate());
-    return dto;
   }
 }
